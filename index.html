@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Base Camp</title>
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script>
+  // Apply saved theme before first paint (no flash)
+  (function(){ try{
+    if(localStorage.getItem('basecamp.theme')==='dark')
+      document.documentElement.setAttribute('data-theme','dark');
+  }catch(e){} })();
+</script>
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32" width="28" height="28"><path d="M16 3 L29 27 L3 27 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M16 3 L21 12 L16 10 L11 12 Z" fill="currentColor"/></svg>
+      </div>
+      <div class="brand-text">
+        <span class="brand-name">Base Camp</span>
+        <span class="brand-elev" id="elevation">— elev. 5,364 m</span>
+      </div>
+    </div>
+    <button class="palette-hint" id="paletteHint"><kbd>⌘K</kbd> Search &amp; jump</button>
+    <button class="palette-hint" id="tipsHint">💡 Tips &amp; shortcuts</button>
+
+    <nav class="nav">
+      <button class="nav-item active" data-tab="dashboard">
+        <span class="nav-ico">⛰</span><span class="nav-label">Base Camp</span>
+      </button>
+      <button class="nav-item" data-tab="cache">
+        <span class="nav-ico">🎒</span><span class="nav-label">Supply Cache</span>
+      </button>
+      <button class="nav-item" data-tab="ascent">
+        <span class="nav-ico">🧗</span><span class="nav-label">The Ascent</span>
+      </button>
+      <button class="nav-item" data-tab="expeditions">
+        <span class="nav-ico">🏔</span><span class="nav-label">Expeditions</span>
+      </button>
+      <button class="nav-item" data-tab="notes">
+        <span class="nav-ico">📓</span><span class="nav-label">Field Notes</span>
+      </button>
+      <button class="nav-item" data-tab="summit">
+        <span class="nav-ico">📈</span><span class="nav-label">Summit Log</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-foot">
+      <div class="storage-status" id="storageStatus">
+        <span class="dot" id="storageDot"></span>
+        <span id="storageLabel">Local store</span>
+      </div>
+      <div class="data-actions">
+        <button class="btn-ghost" id="exportBtn" title="Download all data as a JSON backup">Export</button>
+        <button class="btn-ghost" id="importBtn" title="Restore from a JSON backup">Import</button>
+        <input type="file" id="importFile" accept="application/json" hidden>
+      </div>
+      <button class="btn-ghost snapshot-btn" id="snapshotBtn" title="Export a Markdown status snapshot to paste into Claude">📋 Snapshot for Claude</button>
+      <button class="theme-toggle" id="themeToggle" title="Switch theme">
+        <span id="themeIcon">🌙</span><span id="themeLabel">Night camp</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="nudge" id="backupNudge" hidden>
+      <span class="nudge-ico">📍</span>
+      <span class="nudge-text">You've made changes since your last backup. Stash a copy before you head out.</span>
+      <button class="nudge-btn" id="nudgeBackup">Back up now</button>
+      <button class="nudge-dismiss" id="nudgeDismiss" title="Dismiss until next change">×</button>
+    </div>
+    <!-- DASHBOARD -->
+    <section class="tab active" id="tab-dashboard">
+      <header class="page-head">
+        <div>
+          <p class="eyebrow" id="greeting">Conditions clear</p>
+          <h1 class="page-title">Base Camp</h1>
+        </div>
+        <div class="head-meta">
+          <span id="todayDate"></span>
+        </div>
+      </header>
+      <div class="dash-grid">
+        <div class="card stat" id="statLinks"><p class="stat-label">Supplies cached</p><p class="stat-num" id="kpiLinks">0</p><p class="stat-sub">links &amp; paths</p></div>
+        <div class="card stat" id="statActive"><p class="stat-label">On the ascent</p><p class="stat-num" id="kpiActive">0</p><p class="stat-sub">cards in progress</p></div>
+        <div class="card stat" id="statDue"><p class="stat-label">Weather closing in</p><p class="stat-num" id="kpiDue">0</p><p class="stat-sub">due in 48h</p></div>
+        <div class="card stat" id="statDone"><p class="stat-label">Summited</p><p class="stat-num" id="kpiDone">0</p><p class="stat-sub">cards done</p></div>
+      </div>
+      <div class="dash-cols">
+        <div class="card">
+          <div class="card-head"><h2>Next on the route</h2><button class="link-btn" data-jump="ascent">Open The Ascent →</button></div>
+          <ul class="mini-list" id="dashRoute"><li class="empty">Nothing queued. Add cards in The Ascent.</li></ul>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>Today's climb</h2><button class="link-btn" data-jump="summit">Open Summit Log →</button></div>
+          <ul class="mini-list" id="dashClimb"><li class="empty">No routes yet. Add one in Summit Log.</li></ul>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>Quick supplies</h2><button class="link-btn" data-jump="cache">Open Supply Cache →</button></div>
+          <ul class="mini-list" id="dashSupplies"><li class="empty">No supplies cached yet.</li></ul>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>Weather closing in</h2><button class="link-btn" data-jump="ascent">Open The Ascent →</button></div>
+          <ul class="mini-list" id="dashDue"><li class="empty">Nothing due soon. Clear skies.</li></ul>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>Recent wins</h2><button class="link-btn" data-jump="ascent">Open The Ascent →</button></div>
+          <ul class="mini-list" id="dashWins"><li class="empty">No summits in the last 7 days.</li></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SUPPLY CACHE -->
+    <section class="tab" id="tab-cache">
+      <header class="page-head">
+        <div><p class="eyebrow">Provisions for the climb</p><h1 class="page-title">Supply Cache</h1></div>
+        <button class="btn-primary" id="addLinkBtn">+ Cache supply</button>
+      </header>
+      <div class="toolbar">
+        <input type="search" id="cacheSearch" class="search" placeholder="Search supplies, tags, paths…">
+        <div class="chip-row" id="cacheCats"></div>
+      </div>
+      <div class="cache-grid" id="cacheGrid"></div>
+    </section>
+
+    <!-- ASCENT (KANBAN) -->
+    <section class="tab" id="tab-ascent">
+      <header class="page-head">
+        <div><p class="eyebrow">The route to the summit</p><h1 class="page-title">The Ascent</h1></div>
+        <div class="head-actions">
+          <button class="btn-secondary" id="compactToggle" title="Toggle card detail">Compact</button>
+          <button class="btn-primary" id="addCardBtn">+ New card</button>
+        </div>
+      </header>
+      <div class="quickadd">
+        <input type="text" id="quickAddInput" class="quickadd-input"
+          placeholder="Quick add:  Fix MAR workflow #epic @AcmeHealth !high ~fri +pull logs +verify config">
+        <button class="quickadd-help" id="quickAddHelp" title="Syntax help">?</button>
+      </div>
+      <div class="quickadd-hint" id="quickAddHelpHint" hidden></div>
+      <div class="quickadd-hint" id="quickAddHint" hidden></div>
+      <div class="board" id="board"></div>
+    </section>
+
+    <!-- EXPEDITIONS -->
+    <section class="tab" id="tab-expeditions">
+      <header class="page-head">
+        <div><p class="eyebrow">Clients &amp; projects underway</p><h1 class="page-title">Expeditions</h1></div>
+        <div class="head-meta" id="expoCount"></div>
+      </header>
+      <div class="toolbar">
+        <input type="search" id="expoSearch" class="search" placeholder="Search expeditions…">
+        <div class="chip-row">
+          <button class="chip active" data-expoview="active">Active</button>
+          <button class="chip" data-expoview="completed">Completed work</button>
+        </div>
+      </div>
+      <div class="expo-grid" id="expoGrid"></div>
+    </section>
+
+    <!-- FIELD NOTES -->
+    <section class="tab" id="tab-notes">
+      <header class="page-head">
+        <div><p class="eyebrow">Observations from the field</p><h1 class="page-title">Field Notes</h1></div>
+        <button class="btn-primary" id="addNoteBtn">+ New note</button>
+      </header>
+      <div class="notes-toolbar">
+        <input type="search" id="noteSearch" class="search" placeholder="Search notes…">
+        <div class="notes-filters">
+          <button class="chip active" data-view="active">Active</button>
+          <button class="chip" data-view="archived">Archived</button>
+          <button class="chip" data-view="all">All</button>
+        </div>
+      </div>
+      <div class="notes-selbar" id="notesSelbar" hidden>
+        <span id="notesSelCount">0 selected</span>
+        <div class="selbar-actions">
+          <button class="btn-ghost" id="selArchive">Archive</button>
+          <button class="btn-ghost" id="selExport">Export for Claude</button>
+          <button class="btn-ghost danger" id="selDelete">Delete</button>
+          <button class="btn-ghost" id="selClear">Clear selection</button>
+        </div>
+      </div>
+      <div class="notes-layout">
+        <div class="notes-list" id="notesList"></div>
+        <div class="note-editor" id="noteEditor"></div>
+      </div>
+    </section>
+
+    <!-- SUMMIT LOG -->
+    <section class="tab" id="tab-summit">
+      <header class="page-head">
+        <div><p class="eyebrow">Days on the mountain</p><h1 class="page-title">Summit Log</h1></div>
+        <div class="head-actions">
+          <button class="btn-secondary" id="summitArchToggle" title="Show archived routes">Archived</button>
+          <button class="btn-primary" id="addTrackerBtn">+ New route</button>
+        </div>
+      </header>
+      <div class="summit-grid" id="summitGrid"></div>
+    </section>
+  </main>
+</div>
+
+<!-- Modal -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal" id="modal" role="dialog" aria-modal="true"></div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<!-- Command palette -->
+<div class="palette-backdrop" id="paletteBackdrop">
+  <div class="palette" role="dialog" aria-modal="true">
+    <input type="text" id="paletteInput" class="palette-input" placeholder="Search or jump to… (try a command)" autocomplete="off">
+    <div class="palette-results" id="paletteResults"></div>
+    <div class="palette-foot"><span><kbd>↑</kbd><kbd>↓</kbd> navigate</span><span><kbd>↵</kbd> select</span><span><kbd>esc</kbd> close</span></div>
+  </div>
+</div>
+
+<script src="js/store.js"></script>
+<script src="js/cache.js"></script>
+<script src="js/ascent.js"></script>
+<script src="js/expeditions.js"></script>
+<script src="js/notes.js"></script>
+<script src="js/summit.js"></script>
+<script src="js/palette.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
