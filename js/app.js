@@ -106,6 +106,8 @@ const App = (() => {
     Cache.init(); Ascent.init(); Notes.init(); Summit.init(); Palette.init(); Expeditions.init();
     const ph = document.getElementById('paletteHint');
     if(ph) ph.onclick = () => Palette.show();
+    const th = document.getElementById('tipsHint');
+    if(th) th.onclick = () => showTips();
 
     document.querySelectorAll('.nav-item[data-tab]').forEach(b =>
       b.onclick = () => switchTab(b.dataset.tab));
@@ -153,7 +155,47 @@ const App = (() => {
     checkBackupNudge();
   }
 
-  return { init, switchTab, refreshKPIs, setStorageState, renderAll, checkBackupNudge: onDataChanged, openNote, openPalette };
+  function showTips(){
+    Modal.open(`
+      <div class="modal-tips">
+        <h2>💡 Tips &amp; shortcuts</h2>
+
+        <div class="tips-section">
+          <h3>Tabs</h3>
+          <div class="tips-list">
+            <div class="tips-row"><span class="tips-key">⛰ Base Camp</span><span class="tips-desc">Daily dashboard — overdue &amp; upcoming items, today's climb.</span></div>
+            <div class="tips-row"><span class="tips-key">🎒 Supply Cache</span><span class="tips-desc">Saved links &amp; files, organized by tag/category.</span></div>
+            <div class="tips-row"><span class="tips-key">🧗 The Ascent</span><span class="tips-desc">Kanban board for tasks — supports quick-add syntax below.</span></div>
+            <div class="tips-row"><span class="tips-key">🏔 Expeditions</span><span class="tips-desc">Client/project view, built live from Ascent card tags.</span></div>
+            <div class="tips-row"><span class="tips-key">📓 Field Notes</span><span class="tips-desc">Rich-text notes, linkable to an Expedition/client.</span></div>
+            <div class="tips-row"><span class="tips-key">📈 Summit Log</span><span class="tips-desc">Habit tracker with Daily / Weekly / Weekdays cadences.</span></div>
+          </div>
+        </div>
+
+        <div class="tips-section">
+          <h3>Keyboard shortcuts</h3>
+          <div class="tips-list">
+            <div class="tips-row"><span class="tips-key">⌘/Ctrl K</span><span class="tips-desc">Open the command palette — search &amp; jump anywhere.</span></div>
+            <div class="tips-row"><span class="tips-key">Esc</span><span class="tips-desc">Close the open modal or palette.</span></div>
+            <div class="tips-row"><span class="tips-key">⌘/Ctrl B / I</span><span class="tips-desc">Bold / italic while editing a Field Note.</span></div>
+          </div>
+        </div>
+
+        <div class="tips-section">
+          <h3>Quick-add syntax (The Ascent)</h3>
+          <div class="tips-syntax">Fix MAR workflow <b>#epic</b> <b>@AcmeHealth</b> <b>!high</b> <b>~fri</b> <b>+pull logs</b> <b>+verify config</b></div>
+          <p style="margin-top:10px"><b>#</b>label &nbsp; <b>@</b>client &nbsp; <b>!</b>priority (low/med/high) &nbsp; <b>~</b>due date &nbsp; <b>+</b>subtask (repeatable)</p>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-secondary" id="tipsCloseBtn">Close</button>
+        </div>
+      </div>
+    `);
+    document.getElementById('tipsCloseBtn').onclick = () => Modal.close();
+  }
+
+  return { init, switchTab, refreshKPIs, setStorageState, renderAll, checkBackupNudge: onDataChanged, openNote, openPalette, showTips };
 })();
 
 document.addEventListener('DOMContentLoaded', App.init);
