@@ -143,6 +143,21 @@ const App = (() => {
       syncThemeBtn();
     };
 
+    // sidebar collapse/expand — single toggle, fixed position regardless of state
+    const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+    const setSidebar = (collapsed) => {
+      const root = document.documentElement;
+      if(collapsed){ root.setAttribute('data-sidebar','collapsed'); localStorage.setItem('basecamp.sidebarCollapsed','1'); }
+      else { root.removeAttribute('data-sidebar'); localStorage.setItem('basecamp.sidebarCollapsed','0'); }
+      sidebarToggleBtn.setAttribute('aria-expanded', String(!collapsed));
+      sidebarToggleBtn.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
+      sidebarToggleBtn.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+    };
+    sidebarToggleBtn.onclick = () => {
+      setSidebar(document.documentElement.getAttribute('data-sidebar') !== 'collapsed');
+    };
+    setSidebar(document.documentElement.getAttribute('data-sidebar') === 'collapsed');
+
     // date + greeting
     const now = new Date();
     document.getElementById('todayDate').textContent =
@@ -175,7 +190,7 @@ const App = (() => {
         <div class="tips-section">
           <h3>Keyboard shortcuts</h3>
           <div class="tips-list">
-            <div class="tips-row"><span class="tips-key">⌘/Ctrl K</span><span class="tips-desc">Open the command palette — search &amp; jump anywhere.</span></div>
+            <div class="tips-row"><span class="tips-key">⌘/Ctrl Space</span><span class="tips-desc">Open the command palette — search &amp; jump anywhere.</span></div>
             <div class="tips-row"><span class="tips-key">Esc</span><span class="tips-desc">Close the open modal or palette.</span></div>
             <div class="tips-row"><span class="tips-key">⌘/Ctrl B / I</span><span class="tips-desc">Bold / italic while editing a Field Note.</span></div>
           </div>

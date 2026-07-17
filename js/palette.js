@@ -90,7 +90,7 @@ const Palette = (() => {
     list = document.getElementById('paletteResults');
 
     document.addEventListener('keydown', e => {
-      if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); open?close():show(); return; }
+      if((e.ctrlKey||e.metaKey) && e.code==='Space'){ e.preventDefault(); open?close():show(); return; }
       if(!open) return;
       if(e.key==='Escape'){ close(); }
       else if(e.key==='ArrowDown'){ e.preventDefault(); active=Math.min(active+1, results.length-1); highlight(); }
