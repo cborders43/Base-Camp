@@ -67,12 +67,14 @@ const Notes = (() => {
     {cmd:'underline',   label:'U',  title:'Underline (Ctrl/Cmd+U)', cls:'rte-u'},
     {cmd:'insertUnorderedList', label:'•≡', title:'Bullet list'},
     {cmd:'insertOrderedList',   label:'1≡', title:'Numbered list'},
+    {cmd:'insertTable',        label:'▦',  title:'Insert table (3×3)'},
   ];
 
   function renderEditor(){
     const el = document.getElementById('noteEditor');
     const n = openId ? (Store.data.notes||[]).find(x => x.id === openId) : null;
     activeImg = null;
+    hideTableControls();
     if(!n){ el.innerHTML = `<div class="editor-empty">Select a note, or start a new one.</div>`; return; }
     const clientList = [...new Set((Store.data.cards||[]).map(c=>c.client).filter(Boolean))];
     el.innerHTML = `
@@ -98,7 +100,8 @@ const Notes = (() => {
       <div class="note-body-input" id="ne-body" contenteditable="true" data-placeholder="Write freely…">${n.body||''}</div>
       <div class="note-editor-actions">
         <button class="btn-ghost" id="ne-archive">${n.archived?'Unarchive':'Archive'}</button>
-        <button class="btn-ghost" id="ne-export">Export for Claude</button>
+        <button class="btn-ghost" id="ne-export">Export as plain-text</button>
+        <button class="btn-ghost" id="ne-export-html">Export as HTML</button>
         <button class="btn-ghost danger" id="ne-delete">Delete</button>
         <span class="save-state" id="ne-saved">Saved</span>
       </div>`;
@@ -128,13 +131,23 @@ const Notes = (() => {
     body.onclick = e => {
       const img = e.target.closest('img.note-img');
       selectImage(img || null, body);
+      const cell = e.target.closest('td,th');
+      const table = e.target.closest('table.note-table');
+      if(cell && table) showTableControls(table, autosave);
+      else hideTableControls();
     };
     document.getElementById('ne-toolbar').querySelectorAll('[data-cmd]').forEach(btn =>
-      btn.onclick = () => { body.focus(); document.execCommand(btn.dataset.cmd); autosave(); });
+      btn.onclick = () => {
+        body.focus();
+        if(btn.dataset.cmd === 'insertTable') insertTable(body);
+        else document.execCommand(btn.dataset.cmd);
+        autosave();
+      });
     document.getElementById('ne-img-controls').querySelectorAll('[data-imgsize]').forEach(btn =>
       btn.onclick = () => { if(activeImg){ applyImageSize(activeImg, btn.dataset.imgsize); autosave(); } });
     document.getElementById('ne-archive').onclick = () => { n.archived = !n.archived; n.updated = Date.now(); Store.persist(); render(); Toast.show(n.archived?'Archived':'Unarchived'); };
     document.getElementById('ne-export').onclick = () => exportNotes([n]);
+    document.getElementById('ne-export-html').onclick = () => exportNotesHtml([n]);
     document.getElementById('ne-delete').onclick = () => {
       if(confirm('Delete this note? This cannot be undone.')){
         Store.data.notes = Store.data.notes.filter(x => x.id !== n.id);
@@ -199,6 +212,80 @@ const Notes = (() => {
     newRange.collapse(true);
     sel.removeAllRanges();
     sel.addRange(newRange);
+  }
+
+  // ---- table insert ----
+  // Inserts a simple 3x3 table at the cursor. Cells are contenteditable by
+  // inheritance from the body; a small "+row"/"+col" affordance appears
+  // when a table cell has focus, so users can grow the table without a
+  // full grid-editing UI.
+  function insertTable(body){
+    const html = `<table class="note-table"><tbody>
+      ${Array.from({length:3}).map(() =>
+        `<tr>${Array.from({length:3}).map(()=>`<td></td>`).join('')}</tr>`
+      ).join('')}
+    </tbody></table><p><br></p>`;
+    if(!document.execCommand('insertHTML', false, html)){
+      body.insertAdjacentHTML('beforeend', html);
+    }
+  }
+  function tableGrowControls(body){
+    let bar = document.getElementById('ne-table-controls');
+    if(!bar){
+      bar = document.createElement('div');
+      bar.id = 'ne-table-controls';
+      bar.className = 'note-table-controls';
+      bar.hidden = true;
+      bar.innerHTML = `<button type="button" data-tbl="addrow">+ Row</button>
+        <button type="button" data-tbl="addcol">+ Col</button>
+        <button type="button" data-tbl="delrow">− Row</button>
+        <button type="button" data-tbl="delcol">− Col</button>`;
+      document.body.appendChild(bar);
+    }
+    return bar;
+  }
+  function positionTableControls(bar, table){
+    const r = table.getBoundingClientRect();
+    bar.style.left = (r.left + window.scrollX) + 'px';
+    bar.style.top = (r.top - 30 + window.scrollY) + 'px';
+  }
+  function tableAddRow(table){
+    const rows = table.querySelectorAll('tr');
+    const cols = rows.length ? rows[0].children.length : 1;
+    const tr = document.createElement('tr');
+    for(let i=0;i<cols;i++) tr.appendChild(document.createElement('td'));
+    table.querySelector('tbody, table')?.appendChild ? table.querySelector('tbody')?.appendChild(tr) : table.appendChild(tr);
+  }
+  function tableAddCol(table){
+    table.querySelectorAll('tr').forEach(tr => tr.appendChild(document.createElement('td')));
+  }
+  function tableDelRow(table){
+    const rows = table.querySelectorAll('tr');
+    if(rows.length > 1) rows[rows.length-1].remove();
+  }
+  function tableDelCol(table){
+    const rows = table.querySelectorAll('tr');
+    if(rows.length && rows[0].children.length > 1){
+      rows.forEach(tr => tr.lastElementChild && tr.lastElementChild.remove());
+    }
+  }
+  function showTableControls(table, autosave){
+    const bar = tableGrowControls();
+    bar.hidden = false;
+    positionTableControls(bar, table);
+    bar.querySelectorAll('[data-tbl]').forEach(btn => {
+      btn.onclick = ev => {
+        ev.preventDefault();
+        const fn = {addrow:tableAddRow, addcol:tableAddCol, delrow:tableDelRow, delcol:tableDelCol}[btn.dataset.tbl];
+        fn(table);
+        positionTableControls(bar, table);
+        autosave();
+      };
+    });
+  }
+  function hideTableControls(){
+    const bar = document.getElementById('ne-table-controls');
+    if(bar) bar.hidden = true;
   }
 
   // ---- image paste: intercept, downscale, insert ----
@@ -348,6 +435,36 @@ const Notes = (() => {
     Toast.show(`Exported ${sorted.length} note${sorted.length>1?'s':''}`);
   }
 
+  // ===== Export: HTML (preserves formatting, images, tables) =====
+  function exportNotesHtml(notes){
+    if(!notes.length){ Toast.show('No notes selected'); return; }
+    const sorted = notes.slice().sort((a,b)=>(a.created||0)-(b.created||0));
+    const range = dateRange(sorted);
+    const style = `
+      body{font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;color:#1f2933;max-width:800px;margin:40px auto;padding:0 20px;line-height:1.6}
+      h1{font-size:20px;margin-bottom:2px}
+      .meta{color:#6b7684;font-size:13px;margin-bottom:24px}
+      .note{margin-bottom:36px;padding-bottom:24px;border-bottom:1px solid #e4e7eb}
+      .note h2{font-size:16px;margin:0 0 4px}
+      .note .sub{color:#6b7684;font-size:12px;margin-bottom:10px}
+      .note img{max-width:100%;border-radius:8px;display:block;margin:10px 0}
+      table{border-collapse:collapse;margin:10px 0}
+      table td,table th{border:1px solid #d3d8de;padding:6px 10px}
+      ul,ol{margin:6px 0 6px 22px}`;
+    let body = `<h1>Field Notes export</h1>`;
+    body += `<div class="meta">Range: ${esc(range)} · Count: ${sorted.length} note${sorted.length>1?'s':''}</div>`;
+    sorted.forEach((n,i) => {
+      body += `<div class="note">
+        <h2>${i+1}. ${esc(n.title || 'Untitled')}</h2>
+        <div class="sub">${esc(fmtDate(n.created))}${n.archived?' · archived':''}${n.client?' · '+esc(n.client):''}</div>
+        <div>${n.body || '<em>(empty)</em>'}</div>
+      </div>`;
+    });
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Field Notes export</title><style>${style}</style></head><body>${body}</body></html>`;
+    download(`field-notes-${stamp()}.html`, html, 'text/html');
+    Toast.show(`Exported ${sorted.length} note${sorted.length>1?'s':''} as HTML`);
+  }
+
   function bulkArchive(){
     const ids = [...selected];
     const unarch = document.getElementById('selArchive').dataset.mode === 'unarchive';
@@ -365,6 +482,10 @@ const Notes = (() => {
   function bulkExport(){
     const notes = Store.data.notes.filter(n => selected.has(n.id));
     exportNotes(notes);
+  }
+  function bulkExportHtml(){
+    const notes = Store.data.notes.filter(n => selected.has(n.id));
+    exportNotesHtml(notes);
   }
 
   // helpers
@@ -394,11 +515,15 @@ const Notes = (() => {
     document.getElementById('selArchive').onclick = bulkArchive;
     document.getElementById('selDelete').onclick = bulkDelete;
     document.getElementById('selExport').onclick = bulkExport;
+    document.getElementById('selExportHtml').onclick = bulkExportHtml;
     document.getElementById('selClear').onclick = () => { selected.clear(); render(); };
     document.addEventListener('click', e => {
       const body = document.getElementById('ne-body');
       if(body && !body.contains(e.target) && !e.target.closest('.note-img-handle') && !e.target.closest('#ne-img-controls')){
         selectImage(null, body);
+      }
+      if(body && !body.contains(e.target) && !e.target.closest('#ne-table-controls')){
+        hideTableControls();
       }
     });
   }
