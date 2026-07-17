@@ -16,6 +16,8 @@
   (function(){ try{
     if(localStorage.getItem('basecamp.theme')==='dark')
       document.documentElement.setAttribute('data-theme','dark');
+    if(localStorage.getItem('basecamp.sidebarCollapsed')==='1')
+      document.documentElement.setAttribute('data-sidebar','collapsed');
   }catch(e){} })();
 </script>
 </head>
@@ -23,6 +25,9 @@
 <div class="app">
   <!-- Sidebar -->
   <aside class="sidebar">
+    <button class="sidebar-toggle-btn" id="sidebarToggleBtn" title="Collapse sidebar" aria-label="Collapse sidebar" aria-expanded="true">
+      <svg viewBox="0 0 16 16" width="13" height="13"><path d="M10 2 L5 8 L10 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
     <div class="brand">
       <div class="brand-mark" aria-hidden="true">
         <svg viewBox="0 0 32 32" width="28" height="28"><path d="M16 3 L29 27 L3 27 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M16 3 L21 12 L16 10 L11 12 Z" fill="currentColor"/></svg>
@@ -32,26 +37,26 @@
         <span class="brand-elev" id="elevation">— elev. 5,364 m</span>
       </div>
     </div>
-    <button class="palette-hint" id="paletteHint"><kbd>⌘K</kbd> Search &amp; jump</button>
+    <button class="palette-hint" id="paletteHint"><kbd>⌘Space</kbd> Search &amp; jump</button>
     <button class="palette-hint" id="tipsHint">💡 Tips &amp; shortcuts</button>
 
     <nav class="nav">
-      <button class="nav-item active" data-tab="dashboard">
+      <button class="nav-item active" data-tab="dashboard" title="Base Camp">
         <span class="nav-ico">⛰</span><span class="nav-label">Base Camp</span>
       </button>
-      <button class="nav-item" data-tab="cache">
+      <button class="nav-item" data-tab="cache" title="Supply Cache">
         <span class="nav-ico">🎒</span><span class="nav-label">Supply Cache</span>
       </button>
-      <button class="nav-item" data-tab="ascent">
+      <button class="nav-item" data-tab="ascent" title="The Ascent">
         <span class="nav-ico">🧗</span><span class="nav-label">The Ascent</span>
       </button>
-      <button class="nav-item" data-tab="expeditions">
+      <button class="nav-item" data-tab="expeditions" title="Expeditions">
         <span class="nav-ico">🏔</span><span class="nav-label">Expeditions</span>
       </button>
-      <button class="nav-item" data-tab="notes">
+      <button class="nav-item" data-tab="notes" title="Field Notes">
         <span class="nav-ico">📓</span><span class="nav-label">Field Notes</span>
       </button>
-      <button class="nav-item" data-tab="summit">
+      <button class="nav-item" data-tab="summit" title="Summit Log">
         <span class="nav-ico">📈</span><span class="nav-label">Summit Log</span>
       </button>
     </nav>
