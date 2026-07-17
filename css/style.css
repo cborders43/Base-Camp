@@ -416,6 +416,14 @@ html[data-sidebar="collapsed"] .sidebar-toggle-btn svg{transform:rotate(180deg)}
 .note-body-input img.note-img.sel{border-color:var(--cyan)}
 .note-img-handle{position:fixed;width:14px;height:14px;border-radius:4px;background:var(--cyan);
   border:2px solid var(--snow);box-shadow:var(--shadow);cursor:nwse-resize;z-index:80}
+.note-body-input table.note-table{border-collapse:collapse;margin:10px 0;width:auto}
+.note-body-input table.note-table td,.note-body-input table.note-table th{
+  border:1px solid var(--line);padding:6px 10px;min-width:60px;vertical-align:top}
+.note-table-controls{position:absolute;display:flex;gap:4px;background:var(--slate);
+  border-radius:7px;padding:4px;box-shadow:var(--shadow);z-index:90}
+.note-table-controls button{border:none;background:none;color:#fff;font-size:11px;font-weight:600;
+  padding:4px 8px;border-radius:5px;cursor:pointer;transition:.12s}
+.note-table-controls button:hover{background:rgba(255,255,255,.18)}
 .note-editor-actions{display:flex;gap:8px;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
 .note-editor-actions .btn-ghost.danger{color:var(--rope);border-color:rgba(201,84,59,.3)}
 .note-editor-actions .btn-ghost.danger:hover{background:rgba(201,84,59,.08)}
